@@ -23,8 +23,8 @@ const (
 	startStr = `<div id="content_popup">`
 	endStr   = `</div>`
 
-	confUser = "AUTO_MYWIRE_USER"
-	confPass = "AUTO_MYWIRE_PASS"
+	confUser = "MYWIRE_USER"
+	confPass = "MYWIRE_PASS"
 )
 
 func readUserAndPass() (user, pass string) {
