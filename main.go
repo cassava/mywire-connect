@@ -1,4 +1,4 @@
-// auto-mywire is a program to maintain the connection to mywire.
+// mywire-connect is a program to initiate the connection to mywire.
 package main
 
 import (
@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	pingURL  = "www.google.com"
+	pingURL  = "http://www.google.com"
 	loginURL = "https://login.my-wire.de/index.php"
 
 	// waitTime in seconds if mywire tells us to wait
@@ -31,12 +31,13 @@ func readUserAndPass() (user, pass string) {
 	user = os.Getenv(confUser)
 	if user == "" {
 		fmt.Printf("Fatal error: environment variable %v not set.\n", confUser)
-		os.Exit(1)
 	}
-
 	pass = os.Getenv(confPass)
 	if pass == "" {
 		fmt.Printf("Fatal error: environment variable %v not set.\n", confPass)
+	}
+
+	if user == "" || pass == "" {
 		os.Exit(1)
 	}
 
@@ -82,7 +83,7 @@ func login(user, pass string) (status mywireStatus, err error) {
 
 			if strings.Contains(line, "WARTEN") {
 				return mywireWait, nil
-			} else if strings.Contains(line, "ERFOLGREICH") {
+			} else if strings.Contains(line, "Erfolgreich") {
 				return mywireSuccess, nil
 			} else {
 				// Find out what the mywire response actually is
@@ -98,10 +99,10 @@ func login(user, pass string) (status mywireStatus, err error) {
 }
 
 func isOnline(path string) (online, mywire bool) {
-	catch := fmt.Errorf("detected my-wire.de redirect")
+	catch := fmt.Errorf("detected my-wire.de redirection")
 
 	c := &http.Client{CheckRedirect: func(req *http.Request, via []*http.Request) error {
-		if strings.Contains(req.URL.Path, "my-wire.de") {
+		if strings.Contains(req.URL.Host, "my-wire.de") {
 			return catch
 		}
 		return nil
@@ -111,7 +112,10 @@ func isOnline(path string) (online, mywire bool) {
 	if resp != nil && resp.Close {
 		resp.Body.Close()
 	}
-	return err != nil, err == catch
+	if this, ok := err.(*url.Error); ok {
+		mywire = this.Err == catch
+	}
+	return err == nil, mywire
 }
 
 func main() {
