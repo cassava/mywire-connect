@@ -1,3 +1,7 @@
+// Copyright (c) 2013, Ben Morgan. All rights reserved.
+// Use of this source code is governed by an MIT license
+// that can be found in the LICENSE file.
+
 // mywire-connect is a program to initiate the connection to mywire.
 package main
 
@@ -13,16 +17,17 @@ import (
 )
 
 const (
-	pingURL  = "http://www.google.com"
-	loginURL = "https://login.my-wire.de/index.php"
+	// pingURL is the URL to use for testing internet connectivity, we are
+	// using Google because they are usually pretty quick in their responses.
+	pingURL = "http://www.google.com"
 
-	// waitTime in seconds if mywire tells us to wait
+	// wait waitTime seconds if mywire tells us to wait; make sure that this
+	// is always greater than 0, otherwise we will send requests as fast as
+	// we can, and that would not be very good.
 	waitTime = 2
 
-	// startStr and endStr determine where the mywire response is to be found
-	startStr = `<div id="content_popup">`
-	endStr   = `</div>`
-
+	// confUser and confPass are the environment variables that are read for
+	// the mywire username and password, respectively.
 	confUser = "MYWIRE_USER"
 	confPass = "MYWIRE_PASS"
 )
@@ -51,6 +56,13 @@ const (
 	mywireSuccess
 	mywireFailure
 	mywireWait
+
+	// loginURL is the URL that we post our login information to
+	loginURL = "https://login.my-wire.de/index.php"
+
+	// startStr and endStr determine where the mywire response is to be found
+	startStr = `<div id="content_popup">`
+	endStr   = `</div>`
 )
 
 func login(user, pass string) (status mywireStatus, err error) {
