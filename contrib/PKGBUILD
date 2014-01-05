@@ -1,0 +1,35 @@
+# Maintainer: Ben Morgan <neembi@gmail.com>
+pkgname=mywire-connect
+pkgver=0.10
+pkgrel=1
+epoch=
+pkgdesc="Automatically complete the login process to a mywire internet connection"
+arch=('i686' 'x86_64')
+url="https://github.com/cassava/mywire-connect"
+license=('MIT')
+groups=()
+depends=('dbus')
+makedepends=('go')
+checkdepends=()
+optdepends=()
+provides=()
+conflicts=()
+replaces=()
+backup=()
+options=()
+install=
+changelog=
+source=(https://github.com/cassava/${pkgname}/archive/v${pkgver}.tar.gz)
+noextract=()
+
+build() {
+	cd "$srcdir/$pkgname-$pkgver"
+    go build
+}
+
+package() {
+	cd "$srcdir/$pkgname-$pkgver"
+    install -m755 -D "$pkgname-$pkgver" "$pkgdir/usr/bin/$pkgname"
+    install -m644 -D "LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
+
