@@ -3,6 +3,9 @@
 // that can be found in the LICENSE file.
 
 // mywire-connect is a program to initiate the connection to mywire.
+//
+// Bonus to those on Linux: mywire-connect can show tray notifications as to
+// what it's status is.
 package main
 
 import (
@@ -15,39 +18,6 @@ import (
 	"strings"
 	"time"
 )
-
-const (
-	// pingURL is the URL to use for testing internet connectivity, we are
-	// using Google because they are usually pretty quick in their responses.
-	pingURL = "http://www.google.com"
-
-	// wait waitTime seconds if mywire tells us to wait; make sure that this
-	// is always greater than 0, otherwise we will send requests as fast as
-	// we can, and that would not be very good.
-	waitTime = 2
-
-	// confUser and confPass are the environment variables that are read for
-	// the mywire username and password, respectively.
-	confUser = "MYWIRE_USER"
-	confPass = "MYWIRE_PASS"
-)
-
-func readUserAndPass() (user, pass string) {
-	user = os.Getenv(confUser)
-	if user == "" {
-		fmt.Printf("Fatal error: environment variable %v not set.\n", confUser)
-	}
-	pass = os.Getenv(confPass)
-	if pass == "" {
-		fmt.Printf("Fatal error: environment variable %v not set.\n", confPass)
-	}
-
-	if user == "" || pass == "" {
-		os.Exit(1)
-	}
-
-	return
-}
 
 type mywireStatus int
 
@@ -65,6 +35,7 @@ const (
 	endStr   = `</div>`
 )
 
+// login does the actual work of trying to logon to mywire.
 func login(user, pass string) (status mywireStatus, err error) {
 	resp, err := http.PostForm(loginURL, url.Values{
 		"user":   {user},
@@ -110,6 +81,7 @@ func login(user, pass string) (status mywireStatus, err error) {
 	return mywireUnknown, fmt.Errorf("failure reading mywire response")
 }
 
+// isOnline checks if we are online.
 func isOnline(path string) (online, mywire bool) {
 	catch := fmt.Errorf("detected my-wire.de redirection")
 
@@ -131,8 +103,12 @@ func isOnline(path string) (online, mywire bool) {
 }
 
 func main() {
+	// Load the configuration, and exit if we cannot.
+	conf := LoadConfiguration()
+	say := conf.NotifyLevel.TrayNotify
+
 	fmt.Printf("Checking online connectivity... ")
-	online, mywire := isOnline(pingURL)
+	online, mywire := isOnline(conf.PingURL)
 	if online {
 		fmt.Println("success.")
 		return
@@ -140,30 +116,35 @@ func main() {
 	fmt.Println("failed.")
 	if !mywire {
 		fmt.Println("Error: mywire service not available for login process.")
+		say(NotifyCritical, "Connection NON-EXISTENT.")
 		os.Exit(1)
 	}
 
-	user, pass := readUserAndPass()
+	say(NotifyAll, "Connecting to mywire...")
 	for {
-		resp, err := login(user, pass)
+		resp, err := login(conf.User, conf.Pass)
 		switch resp {
 		case mywireWait:
 			// This is the only case where the loop continues
-			fmt.Printf("Waiting %v seconds...\n", waitTime)
-			time.Sleep(waitTime * time.Second)
+			fmt.Printf("Waiting %v milliseconds...\n", conf.WaitTime)
+			time.Sleep(time.Duration(conf.WaitTime) * time.Millisecond)
 		case mywireSuccess:
-			if online, _ = isOnline(pingURL); online {
+			if online, _ = isOnline(conf.PingURL); online {
 				fmt.Println("ONLINE")
+				say(NotifyNormal, "Connection ONLINE.")
 				return
 			} else {
 				fmt.Println("Fatal error: mywire response indicates success, but still no connectivity.")
+				say(NotifyCritical, "Connection FAILED")
 				os.Exit(1)
 			}
 		case mywireFailure:
 			fmt.Printf("Fatal error: mywire responded, %v\n", err)
+			say(NotifyCritical, "Connection FAILED")
 			os.Exit(1)
 		default:
 			fmt.Printf("Fatal error: %v.\n", err)
+			say(NotifyCritical, "Connection FAILED")
 			os.Exit(1)
 		}
 	}
