@@ -48,9 +48,13 @@ func NewDefaultConf() Conf {
 	}
 }
 
+func Version() {
+	fmt.Println("mywire-connect version", version)
+}
+
 func Usage() {
 	conf := NewDefaultConf()
-	fmt.Printf(`Usage: mywire-connect [-config CONFIG]
+	fmt.Printf(`Usage: mywire-connect [-version|-config CONFIG]
 
 mywire-connect tries to login to mywire using the credentials you supply,
 either from the environment or from the file given by CONFIG. If both
@@ -83,8 +87,14 @@ wherever D-Bus and freedesktop.org notifications are present.
 // LoadConfiguration has the authority to exit at will.
 func LoadConfiguration() Conf {
 	path := flag.String("config", "", "use the given configuration file")
+	ver := flag.Bool("version", false, "print the current version")
 	flag.Usage = Usage
 	flag.Parse()
+
+	if *ver {
+		Version()
+		os.Exit(0)
+	}
 
 	conf := NewDefaultConf()
 	readAuthFromEnvironment(&conf)
