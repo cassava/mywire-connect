@@ -19,7 +19,8 @@ func init() {
 		notify.SetName("mywire")
 		trayNotify = func(goal NotifyLevel, args ...interface{}) {
 			msg := fmt.Sprint(args...)
-			notificationID, _ = notify.ReplaceUrgentMsg(notificationID, msg, "", notify.NotificationUrgency(goal+1%2))
+			urgency := notify.NotificationUrgency((goal + 1) % 3)
+			notificationID, _ = notify.ReplaceUrgentMsg(notificationID, msg, "", urgency)
 		}
 	}
 }
