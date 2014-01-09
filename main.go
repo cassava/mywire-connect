@@ -121,14 +121,23 @@ func main() {
 	}
 
 	say(NotifyAll, "Connecting to mywire...")
+	waited := false
 	for {
 		resp, err := login(conf.User, conf.Pass)
 		switch resp {
 		case mywireWait:
 			// This is the only case where the loop continues
-			fmt.Printf("Waiting %v milliseconds...\n", conf.WaitTime)
+			if waited {
+				fmt.Print(".")
+			} else {
+				fmt.Printf("Trying every %v milliseconds", conf.WaitTime)
+				waited = true
+			}
 			time.Sleep(time.Duration(conf.WaitTime) * time.Millisecond)
 		case mywireSuccess:
+			if waited {
+				fmt.Println()
+			}
 			if online, _ = isOnline(conf.PingURL); online {
 				fmt.Println("ONLINE")
 				say(NotifyNormal, "Connection ONLINE.")
@@ -139,10 +148,16 @@ func main() {
 				os.Exit(1)
 			}
 		case mywireFailure:
+			if waited {
+				fmt.Println()
+			}
 			fmt.Printf("Fatal error: mywire responded, %v\n", err)
 			say(NotifyCritical, "Connection FAILED")
 			os.Exit(1)
 		default:
+			if waited {
+				fmt.Println()
+			}
 			fmt.Printf("Fatal error: %v.\n", err)
 			say(NotifyCritical, "Connection FAILED")
 			os.Exit(1)
